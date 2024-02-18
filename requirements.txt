@@ -2,3 +2,5 @@ torch
 torchvision
 jupyterlab
 pillow
+gradio
+huggingface_hub
