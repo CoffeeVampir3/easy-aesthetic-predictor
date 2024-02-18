@@ -4,9 +4,21 @@ import torch
 import os
 from PIL import Image
 from torchvision import transforms
+from huggingface_hub import hf_hub_download
+
+def download_example_model():
+    # Define the repository and filename
+    repository_id = "Blackroot/Anime-Aesthetic-Predictor-Medium"
+    filename = "trained_aesthetic_scorer_12_epochs_v1.pth"
+    target_dir = "models/"
+    
+    os.makedirs(target_dir, exist_ok=True)
+
+    # Download the file
+    model_path = hf_hub_download(repo_id=repository_id, filename=filename, local_dir=target_dir, local_dir_use_symlinks=False)
 
 MODEL = None
-def load_first_model_from_folder(folder_path):
+def load_first_model_from_folder(folder_path, bad_thing_happened=False):
     """
     Iterates over the files in the given folder and loads the first .pth file as a PyTorch model.
     
@@ -16,6 +28,10 @@ def load_first_model_from_folder(folder_path):
     Returns:
     - torch.nn.Module: The loaded PyTorch model, or None if no .pth file is found.
     """
+    
+    if not os.path.exists(folder_path):
+        download_example_model()
+    
     for filename in os.listdir(folder_path):
         if filename.endswith('.pth'):
             model_path = os.path.join(folder_path, filename)
@@ -23,8 +39,12 @@ def load_first_model_from_folder(folder_path):
             model = torch.load(model_path).to('cuda')
             model.eval()
             return model
-    print("No .pth file found in the folder.")
-    return None
+    
+    download_example_model()
+    if not MODEL and bad_thing_happened:
+        print("Couldn't download model and there's none in the model directory. Get one from: https://huggingface.co/Blackroot/Anime-Aesthetic-Predictor-Medium")
+        exit()
+    return load_first_model_from_folder(folder_path, True)
 
 def predict_image(img_path):
     global MODEL
